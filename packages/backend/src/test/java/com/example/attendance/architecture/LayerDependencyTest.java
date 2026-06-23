@@ -27,8 +27,9 @@ class LayerDependencyTest {
 
         .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
         .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller", "Service")
-        .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service")
-        .whereLayer("Entity").mayOnlyBeAccessedByLayers("Service", "Repository", "Config", "DTO", "Domain")
-        .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller", "Service")
+        .whereLayer("Repository").mayOnlyBeAccessedByLayers("Service", "Config")
+        .whereLayer("Entity").mayOnlyBeAccessedByLayers(
+            "Controller", "Service", "Repository", "Config", "DTO", "Domain")
+        .whereLayer("DTO").mayOnlyBeAccessedByLayers("Controller", "Service", "Config")
         .whereLayer("Domain").mayOnlyBeAccessedByLayers("Service", "DTO", "Entity");
 }

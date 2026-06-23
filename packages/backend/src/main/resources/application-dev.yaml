@@ -1,7 +1,12 @@
 spring:
   docker:
     compose:
-      lifecycle-management: start-and-stop
+      enabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/attendance
+    username: attendance
+    password: attendance
 
   jpa:
     show-sql: true

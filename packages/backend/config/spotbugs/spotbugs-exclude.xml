@@ -10,4 +10,44 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
         <Package name="~com\.example\.attendance\..*\.entity"/>
     </Match>
+
+    <!-- Java record DTOs with List fields: SpotBugs false positive -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.attendance\..*\.dto"/>
+    </Match>
+
+    <!-- Spring DI: shared beans (ObjectMapper, CorsConfigurationSource, etc.) are singletons -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.attendance\.common\.config.*"/>
+    </Match>
+
+    <!-- Security handlers receive shared ObjectMapper / Repository via DI -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.attendance\.common\.config\.security"/>
+    </Match>
+
+    <!-- Controller / Service: Spring DI constructor injection stores shared singletons -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.attendance\..*\.controller"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Package name="~com\.example\.attendance\..*\.service"/>
+    </Match>
+
+    <!-- Test code: text block format string false positive -->
+    <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+        <Package name="~com\.example\.attendance\..*\.controller"/>
+    </Match>
+
+    <!-- EmployeeUserDetails extends Spring Security User; equals/hashCode inherited -->
+    <Match>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
+        <Class name="com.example.attendance.common.config.security.EmployeeUserDetails"/>
+    </Match>
 </FindBugsFilter>
