@@ -11,7 +11,7 @@
 | Enum | `varchar` + CHECK 制約 |
 | 楽観ロック | `version` カラム（`bigint`） |
 | 監査カラム | `created_at` / `updated_at`（Spring Data Auditing） |
-| タイムゾーン | `timestamptz`（UTC 保存、アプリで JST 表示） |
+| タイムゾーン | `TIMESTAMP WITH TIME ZONE`（UTC 保存、アプリで JST 表示。H2 互換のため `TIMESTAMPTZ` は使わない） |
 | 初期データ | Flyway バージョンマイグレーション |
 | 論理削除 | しない（退職は `retire_date` で表現） |
 
@@ -26,16 +26,16 @@
 | id | uuid | PK | UUID v7 |
 | name | varchar(100) | NOT NULL, UNIQUE | 部署名 |
 | version | bigint | NOT NULL, DEFAULT 0 | 楽観ロック |
-| created_at | timestamptz | NOT NULL | 作成日時 |
-| updated_at | timestamptz | NOT NULL | 更新日時 |
+| created_at | timestamp with time zone | NOT NULL | 作成日時 |
+| updated_at | timestamp with time zone | NOT NULL | 更新日時 |
 
 ```sql
 CREATE TABLE departments (
     id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     version BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 ```
 
@@ -55,8 +55,8 @@ CREATE TABLE departments (
 | hire_date | date | NOT NULL | 入社日 |
 | retire_date | date | | 退職日（null = 在籍中） |
 | version | bigint | NOT NULL, DEFAULT 0 | 楽観ロック |
-| created_at | timestamptz | NOT NULL | 作成日時 |
-| updated_at | timestamptz | NOT NULL | 更新日時 |
+| created_at | timestamp with time zone | NOT NULL | 作成日時 |
+| updated_at | timestamp with time zone | NOT NULL | 更新日時 |
 
 ```sql
 CREATE TABLE employees (
@@ -70,8 +70,8 @@ CREATE TABLE employees (
     hire_date DATE NOT NULL,
     retire_date DATE,
     version BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX idx_employees_department_id ON employees(department_id);
@@ -90,24 +90,24 @@ CREATE INDEX idx_employees_role ON employees(role);
 | id | uuid | PK | UUID v7 |
 | employee_id | uuid | FK → employees(id), NOT NULL | 打刻した社員 |
 | work_date | date | NOT NULL | 勤務日 |
-| clock_in | timestamptz | NOT NULL | 出勤時刻 |
-| clock_out | timestamptz | | 退勤時刻（null = 出勤中） |
+| clock_in | timestamp with time zone | NOT NULL | 出勤時刻 |
+| clock_out | timestamp with time zone | | 退勤時刻（null = 出勤中） |
 | corrected | boolean | NOT NULL, DEFAULT false | 修正済みフラグ |
 | version | bigint | NOT NULL, DEFAULT 0 | 楽観ロック |
-| created_at | timestamptz | NOT NULL | 作成日時 |
-| updated_at | timestamptz | NOT NULL | 更新日時 |
+| created_at | timestamp with time zone | NOT NULL | 作成日時 |
+| updated_at | timestamp with time zone | NOT NULL | 更新日時 |
 
 ```sql
 CREATE TABLE attendance_records (
     id UUID PRIMARY KEY,
     employee_id UUID NOT NULL REFERENCES employees(id),
     work_date DATE NOT NULL,
-    clock_in TIMESTAMPTZ NOT NULL,
-    clock_out TIMESTAMPTZ,
+    clock_in TIMESTAMP WITH TIME ZONE NOT NULL,
+    clock_out TIMESTAMP WITH TIME ZONE,
     corrected BOOLEAN NOT NULL DEFAULT false,
     version BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX idx_attendance_records_employee_date ON attendance_records(employee_id, work_date);
@@ -128,13 +128,13 @@ CREATE INDEX idx_attendance_records_employee_date ON attendance_records(employee
 | requester_id | uuid | FK → employees(id), NOT NULL | 申請者 |
 | approver_id | uuid | FK → employees(id) | 承認/却下した上長（処理前は null） |
 | target_date | date | NOT NULL | 修正対象日 |
-| corrected_clock_in | timestamptz | NOT NULL | 修正後の出勤時刻 |
-| corrected_clock_out | timestamptz | NOT NULL | 修正後の退勤時刻 |
+| corrected_clock_in | timestamp with time zone | NOT NULL | 修正後の出勤時刻 |
+| corrected_clock_out | timestamp with time zone | NOT NULL | 修正後の退勤時刻 |
 | reason | varchar(500) | NOT NULL | 修正理由 |
 | status | varchar(20) | NOT NULL, CHECK | PENDING / APPROVED / REJECTED |
 | version | bigint | NOT NULL, DEFAULT 0 | 楽観ロック |
-| created_at | timestamptz | NOT NULL | 作成日時 |
-| updated_at | timestamptz | NOT NULL | 更新日時 |
+| created_at | timestamp with time zone | NOT NULL | 作成日時 |
+| updated_at | timestamp with time zone | NOT NULL | 更新日時 |
 
 ```sql
 CREATE TABLE attendance_corrections (
@@ -143,13 +143,13 @@ CREATE TABLE attendance_corrections (
     requester_id UUID NOT NULL REFERENCES employees(id),
     approver_id UUID REFERENCES employees(id),
     target_date DATE NOT NULL,
-    corrected_clock_in TIMESTAMPTZ NOT NULL,
-    corrected_clock_out TIMESTAMPTZ NOT NULL,
+    corrected_clock_in TIMESTAMP WITH TIME ZONE NOT NULL,
+    corrected_clock_out TIMESTAMP WITH TIME ZONE NOT NULL,
     reason VARCHAR(500) NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
     version BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 CREATE INDEX idx_attendance_corrections_requester ON attendance_corrections(requester_id);

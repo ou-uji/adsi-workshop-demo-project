@@ -32,6 +32,43 @@ volumes:
 
 ---
 
+## ワークショップ環境（Docker 不要）
+
+SageMaker Studio 等 Docker が使えない環境向けに、H2 インメモリ DB で動作する `workshop` プロファイルを用意。
+
+```yaml
+# application-workshop.yaml
+spring:
+  datasource:
+    url: jdbc:h2:mem:attendance;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+```
+
+### 起動方法
+
+```bash
+npm run boot:workshop
+# または
+./gradlew bootRun --args='--spring.profiles.active=workshop'
+```
+
+### 特徴
+
+- PostgreSQL / Docker のインストール不要（Java だけで動く）
+- Flyway マイグレーション + シードデータが自動適用される
+- H2 Console（`/h2-console`）で DB を直接操作可能
+- アプリ終了時にデータは消滅（インメモリ）
+
+### マイグレーション SQL の互換性
+
+H2 の PostgreSQL 互換モードでも `TIMESTAMPTZ` は未対応のため、マイグレーション SQL では `TIMESTAMP WITH TIME ZONE`（SQL 標準構文）を使用。PostgreSQL でも同義。
+
+---
+
 ## テスト基盤
 
 ### テスト用 DB: Testcontainers
