@@ -13,6 +13,28 @@
 - backend の Gradle コマンドは `packages/backend/` ディレクトリから実行する
 - ルートの `package.json` に各パッケージのコマンドをまとめてある（`npm run boot`, `npm run dev` 等）
 
+## 起動方法とアクセス先
+
+### ローカル開発
+
+- backend: `npm run boot`（または Docker 不要の H2 版 `npm run boot:workshop`）
+- frontend: `npm run dev` → `http://localhost:3000`
+
+### SageMaker Studio Code Editor でのブラウザプレビュー
+
+SageMaker の Code Editor（code-server, base-path `/codeeditor/default`）上でプレビューする場合:
+
+- backend: `npm run boot:workshop`（H2 インメモリ、Docker 不要）
+- frontend: `npm run dev:sagemaker`
+  - `SAGEMAKER=1 NEXT_PUBLIC_BASE_PATH=/codeeditor/default/absports/3000` で `next build` →
+    `next start -p 3001` ＋ `scripts/sagemaker-proxy.mjs`（3000→3001 のプレフィックス復元プロキシ）
+- アクセス先: ブラウザで **`https://<studio-domain>/codeeditor/default/absports/3000/` を直接開く**
+  - `<studio-domain>` は環境ごとに異なる（例: `<studio-domain>.studio.ap-northeast-1.sagemaker.aws`）
+  - **PORTS タブの地球儀ボタンは使わない**。`ports` 形式は外側ゲートウェイの使い捨てトークン
+    （`?id=...&vscodeBrowserReqId=...`）依存で、SPA のフルページ遷移のたびにトークンが落ち
+    `/ports/3000/ports/3000`（Unsupported URL path）に二重化する。`absports` はトークン不要で安定。
+  - 詳細・経緯は `docs/path/14-sagemaker-codeeditor-preview.md` を参照
+
 ## docs/path ルール
 
 デモの過程を `docs/path/` 以下に番号付きファイルで記録する。
