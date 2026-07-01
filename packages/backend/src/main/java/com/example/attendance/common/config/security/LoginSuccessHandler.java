@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CsrfToken;
 
 import java.io.IOException;
 
@@ -23,6 +24,16 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication) throws IOException {
+        // CSRF トークンを実体化して XSRF-TOKEN Cookie を発行させる。
+        // ログイン成功時はこのハンドラでレスポンスがコミットされ、後続の
+        // csrfTokenForceLoadFilter まで到達しないため、ここで明示的にトークンを
+        // 取得しておかないとログイン直後のクライアントが XSRF-TOKEN を持てず、
+        // 続く POST/PUT 系リクエストが 403 になる。
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        if (csrfToken != null) {
+            csrfToken.getToken();
+        }
+
         EmployeeUserDetails userDetails = (EmployeeUserDetails) authentication.getPrincipal();
 
         var authUserResponse = new AuthUserResponse(
