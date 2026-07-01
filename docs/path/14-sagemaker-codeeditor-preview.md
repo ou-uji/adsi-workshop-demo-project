@@ -120,3 +120,45 @@ cd packages/frontend
 - `/absports/3000/api/auth/me` → 401（rewrites でバックエンド到達、未認証の正常応答）
 
 ブラウザで `/codeeditor/default/absports/3000/` を開いてログイン画面が表示・動作することを確認済み。
+
+## 再セットアップ時の落とし穴（環境を作り直したとき）
+
+環境をクローンし直した・別マシンで動かすなど、フロントエンドを再セットアップした直後に
+`/ports/3000/dashboard` が Unsupported URL Path、`/codeeditor/default/absports/3000` が 404 に
+なる場合、原因はほぼ以下のどちらか。**症状は同じでも起動状態が違う**ので順に確認する。
+
+### 1. 通常の `npm run dev` で起動している（→ 404）
+
+`npm run dev` は basePath なしで 3000 に直接 `next dev` を立てる。この状態では
+`/codeeditor/default/absports/3000/...` にマッチするルートが存在せず **404**（`/ports/3000/...` は
+そもそも SPA で二重化して Unsupported URL Path）。
+
+SageMaker プレビューでは**必ず `npm run dev:sagemaker` を使う**。これがフル basePath
+（`/codeeditor/default/absports/3000`）でビルドし、3001 に `next start`、3000 に復元プロキシ、
+という上記の正しい構成を立てる。`npm run dev` と `npm run dev:sagemaker` を取り違えないこと。
+
+確認コマンド（code-server が `/codeeditor/default` を剥がした後を模擬）:
+
+```bash
+# 307 で Location が /codeeditor/default/absports/3000/dashboard（接頭辞欠落なし）なら正しい構成
+curl -s -o /dev/null -w "status=%{http_code} location=%{redirect_url}\n" \
+  http://localhost:3000/absports/3000/
+```
+
+### 2. フロントエンドの依存が未インストール（→ build 失敗）
+
+`packages/frontend` で `npm install` していないと `dev:sagemaker` が失敗する。症状は2通り:
+
+- `sh: 1: next: not found` — `node_modules/.bin/next` が無い。
+- `Next.js inferred your workspace root ... couldn't find the Next.js package (next/package.json)
+  from ... /packages/frontend/src/app` — `npx next build` が一時DLした next を使い、Turbopack が
+  ローカルの `next/package.json` を解決できず `src/app` をルート誤認する。
+
+いずれも **`cd packages/frontend && npm install`** で解決する（ルートの `npm install` とは別に必要）。
+`next.config.ts` の `turbopack.root` は既に正しく設定済みなので、触らず依存だけ入れること。
+
+### 補足: プロキシスクリプトは2つある
+
+`dev:sagemaker` が使うのは **`packages/frontend/scripts/sagemaker-proxy.mjs`**（フル basePath 復元版）。
+リポジトリ直下の `scripts/sagemaker-proxy.mjs` は旧 `/ports/3000` 版で **使われていない**。
+編集する際は前者を対象にすること。
