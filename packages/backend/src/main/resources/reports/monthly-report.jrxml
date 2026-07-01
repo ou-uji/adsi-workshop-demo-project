@@ -15,67 +15,80 @@
 
     <title height="50">
         <element kind="textField" x="0" y="0" width="802" height="40"
-                 fontSize="18.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-            <expression><![CDATA["Monthly Attendance Report - " + $P{month}]]></expression>
+                 fontName="Noto Sans JP" fontSize="18.0" bold="true"
+                 hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA["月次勤怠レポート  " + $P{month}]]></expression>
         </element>
     </title>
 
     <columnHeader height="30">
         <element kind="staticText" x="0" y="0" width="134" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[Employee]]></text>
+            <text><![CDATA[社員名]]></text>
         </element>
         <element kind="staticText" x="134" y="0" width="134" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[Department]]></text>
+            <text><![CDATA[部署]]></text>
         </element>
         <element kind="staticText" x="268" y="0" width="134" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[Work Days]]></text>
+            <text><![CDATA[出勤日数]]></text>
         </element>
         <element kind="staticText" x="402" y="0" width="134" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[Work Minutes]]></text>
+            <text><![CDATA[勤務時間（分）]]></text>
         </element>
         <element kind="staticText" x="536" y="0" width="134" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[OT Minutes]]></text>
+            <text><![CDATA[残業時間（分）]]></text>
         </element>
         <element kind="staticText" x="670" y="0" width="132" height="30"
-                 mode="Opaque" backcolor="#DDDDDD" fontSize="10.0" bold="true"
+                 mode="Opaque" backcolor="#DDDDDD"
+                 fontName="Noto Sans JP" fontSize="10.0" bold="true"
                  hTextAlign="Center" vTextAlign="Middle">
-            <text><![CDATA[Absent Days]]></text>
+            <text><![CDATA[欠勤日数]]></text>
         </element>
     </columnHeader>
 
     <detail>
         <band height="25">
             <element kind="textField" x="0" y="0" width="134" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{employeeName}]]></expression>
             </element>
             <element kind="textField" x="134" y="0" width="134" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{departmentName}]]></expression>
             </element>
             <element kind="textField" x="268" y="0" width="134" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{workDays}]]></expression>
             </element>
             <element kind="textField" x="402" y="0" width="134" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{totalWorkMinutes}]]></expression>
             </element>
             <element kind="textField" x="536" y="0" width="134" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{totalOvertimeMinutes}]]></expression>
             </element>
             <element kind="textField" x="670" y="0" width="132" height="25"
+                     fontName="Noto Sans JP"
                      hTextAlign="Center" vTextAlign="Middle">
                 <expression><![CDATA[$F{absentDays}]]></expression>
             </element>
@@ -84,8 +97,9 @@
 
     <pageFooter height="20">
         <element kind="textField" x="680" y="0" width="122" height="20"
-                 fontSize="8.0" hTextAlign="Right" vTextAlign="Middle">
-            <expression><![CDATA["Page " + $V{PAGE_NUMBER}]]></expression>
+                 fontName="Noto Sans JP" fontSize="8.0"
+                 hTextAlign="Right" vTextAlign="Middle">
+            <expression><![CDATA[$V{PAGE_NUMBER} + " ページ"]]></expression>
         </element>
     </pageFooter>
 

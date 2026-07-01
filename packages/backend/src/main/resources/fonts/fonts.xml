@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JasperReports Font Extension 定義。
+  日本語フォント（Noto Sans JP）を PDF に埋め込む（pdfEmbedded=true）ことで、
+  実行環境に日本語フォントが無くても PDF 上で日本語が正しく表示される。
+  フォントは SIL Open Font License の Noto Sans CJK JP をサブセットしたもの。
+-->
+<fontFamilies>
+    <fontFamily name="Noto Sans JP">
+        <normal>fonts/NotoSansJP-Regular.ttf</normal>
+        <bold>fonts/NotoSansJP-Bold.ttf</bold>
+        <italic>fonts/NotoSansJP-Regular.ttf</italic>
+        <boldItalic>fonts/NotoSansJP-Bold.ttf</boldItalic>
+        <pdfEncoding>Identity-H</pdfEncoding>
+        <pdfEmbedded>true</pdfEmbedded>
+        <exportFonts>
+            <export key="net.sf.jasperreports.html">'Noto Sans JP', sans-serif</export>
+        </exportFonts>
+    </fontFamily>
+</fontFamilies>
