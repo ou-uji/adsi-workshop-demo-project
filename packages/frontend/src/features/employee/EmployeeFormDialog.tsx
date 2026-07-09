@@ -147,6 +147,7 @@ export function EmployeeFormDialog({
           <Select
             value={form.departmentId || null}
             onValueChange={(value) => setForm({ ...form, departmentId: value ?? "" })}
+            items={Object.fromEntries(departments.map((d) => [d.id, d.name]))}
           >
             <SelectTrigger>
               <SelectValue placeholder="部署を選択" />
@@ -171,6 +172,7 @@ export function EmployeeFormDialog({
                 role: (value as "ADMIN" | "EMPLOYEE") ?? "EMPLOYEE",
               })
             }
+            items={{ EMPLOYEE: "一般", ADMIN: "管理者" }}
           >
             <SelectTrigger>
               <SelectValue placeholder="ロールを選択" />

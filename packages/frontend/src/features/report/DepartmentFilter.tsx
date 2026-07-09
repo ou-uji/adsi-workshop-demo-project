@@ -21,8 +21,13 @@ export function DepartmentFilter({ value, onChange }: DepartmentFilterProps) {
     onChange(newValue ?? "all");
   };
 
+  const items = Object.fromEntries([
+    ["all", "全部署"],
+    ...departments.map((d) => [d.id, d.name]),
+  ]);
+
   return (
-    <Select value={value} onValueChange={handleChange}>
+    <Select value={value} onValueChange={handleChange} items={items}>
       <SelectTrigger>
         <SelectValue placeholder="全部署" />
       </SelectTrigger>

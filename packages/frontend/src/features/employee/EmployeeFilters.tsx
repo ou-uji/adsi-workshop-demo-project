@@ -34,6 +34,7 @@ export function EmployeeFilters({
       <Select
         value={departmentId || null}
         onValueChange={(value) => onDepartmentIdChange(value ?? "")}
+        items={Object.fromEntries(departments.map((d) => [d.id, d.name]))}
       >
         <SelectTrigger>
           <SelectValue placeholder="部署で絞り込み" />
@@ -47,7 +48,11 @@ export function EmployeeFilters({
         </SelectContent>
       </Select>
 
-      <Select value={role || null} onValueChange={(value) => onRoleChange(value ?? "")}>
+      <Select
+        value={role || null}
+        onValueChange={(value) => onRoleChange(value ?? "")}
+        items={{ ADMIN: "管理者", EMPLOYEE: "一般" }}
+      >
         <SelectTrigger>
           <SelectValue placeholder="ロールで絞り込み" />
         </SelectTrigger>
