@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -65,7 +66,7 @@ class AttendanceControllerTest {
     private static final UUID EMPLOYEE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @Test
-    @DisplayName("POST /api/attendance/clock-in は201を返す")
+    @DisplayName("POST /api/attendance/clock-in は201を返す（body なし・後方互換）")
     void clockIn_validRequest_returns201() throws Exception {
         // Arrange
         var response = new AttendanceRecordResponse(
@@ -73,9 +74,12 @@ class AttendanceControllerTest {
                 LocalDate.of(2025, 1, 15),
                 Instant.parse("2025-01-15T00:00:00Z"),
                 null,
-                false
+                null,
+                null,
+                false,
+                0L
         );
-        when(attendanceService.clockIn(EMPLOYEE_ID)).thenReturn(response);
+        when(attendanceService.clockIn(EMPLOYEE_ID, null)).thenReturn(response);
 
         // Act & Assert
         mockMvc.perform(post("/api/attendance/clock-in")
@@ -83,6 +87,70 @@ class AttendanceControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.workDate").value("2025-01-15"))
                 .andExpect(jsonPath("$.clockOut").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /api/attendance/clock-in はメモ付き body で201を返す")
+    void clockIn_withMemoBody_returns201() throws Exception {
+        // Arrange
+        var response = new AttendanceRecordResponse(
+                UUID.randomUUID(),
+                LocalDate.of(2025, 1, 15),
+                Instant.parse("2025-01-15T00:00:00Z"),
+                null,
+                "電車遅延のため遅刻",
+                null,
+                false,
+                0L
+        );
+        when(attendanceService.clockIn(EMPLOYEE_ID, "電車遅延のため遅刻")).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/attendance/clock-in")
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType("application/json")
+                        .content("{\"memo\":\"電車遅延のため遅刻\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.clockInMemo").value("電車遅延のため遅刻"));
+    }
+
+    @Test
+    @DisplayName("POST /api/attendance/clock-in は200文字ちょうどのメモで201を返す（境界値）")
+    void clockIn_memoExactly200_returns201() throws Exception {
+        // Arrange: 200 文字ちょうど
+        var memo200 = "あ".repeat(200);
+        var response = new AttendanceRecordResponse(
+                UUID.randomUUID(),
+                LocalDate.of(2025, 1, 15),
+                Instant.parse("2025-01-15T00:00:00Z"),
+                null,
+                memo200,
+                null,
+                false,
+                0L
+        );
+        when(attendanceService.clockIn(EMPLOYEE_ID, memo200)).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/attendance/clock-in")
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType("application/json")
+                        .content("{\"memo\":\"" + memo200 + "\"}"))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("POST /api/attendance/clock-in は201文字メモで400を返す")
+    void clockIn_memoOver200_returns400() throws Exception {
+        // Arrange: 201 文字
+        var longMemo = "あ".repeat(201);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/attendance/clock-in")
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType("application/json")
+                        .content("{\"memo\":\"" + longMemo + "\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -94,15 +162,60 @@ class AttendanceControllerTest {
                 LocalDate.of(2025, 1, 15),
                 Instant.parse("2025-01-14T23:00:00Z"),
                 Instant.parse("2025-01-15T08:00:00Z"),
-                false
+                null,
+                null,
+                false,
+                0L
         );
-        when(attendanceService.clockOut(EMPLOYEE_ID)).thenReturn(response);
+        when(attendanceService.clockOut(EMPLOYEE_ID, null)).thenReturn(response);
 
         // Act & Assert
         mockMvc.perform(post("/api/attendance/clock-out")
                         .param("employeeId", EMPLOYEE_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clockOut").exists());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/attendance/records/{id}/memo は200を返す")
+    void updateMemo_validRequest_returns200() throws Exception {
+        // Arrange
+        var recordId = UUID.randomUUID();
+        var response = new AttendanceRecordResponse(
+                recordId,
+                LocalDate.of(2025, 1, 15),
+                Instant.parse("2025-01-14T23:00:00Z"),
+                Instant.parse("2025-01-15T08:00:00Z"),
+                "修正後メモ",
+                null,
+                false,
+                1L
+        );
+        when(attendanceService.updateMemo(recordId, EMPLOYEE_ID, "修正後メモ", null, 0L))
+                .thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/attendance/records/{id}/memo", recordId)
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType("application/json")
+                        .content("{\"clockInMemo\":\"修正後メモ\",\"clockOutMemo\":null,\"version\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clockInMemo").value("修正後メモ"));
+    }
+
+    @Test
+    @DisplayName("PATCH memo は201文字メモで400を返す")
+    void updateMemo_memoOver200_returns400() throws Exception {
+        // Arrange
+        var recordId = UUID.randomUUID();
+        var longMemo = "あ".repeat(201);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/attendance/records/{id}/memo", recordId)
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType("application/json")
+                        .content("{\"clockInMemo\":\"" + longMemo + "\",\"version\":0}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

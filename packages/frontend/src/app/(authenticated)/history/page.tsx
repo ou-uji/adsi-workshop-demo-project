@@ -4,6 +4,8 @@ import { useState } from "react";
 import { MonthSelector } from "@/components/MonthSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AttendanceTable } from "@/features/attendance/AttendanceTable";
+import type { AttendanceRecordResponse } from "@/features/attendance/attendance-api";
+import { MemoEditDialog } from "@/features/attendance/MemoEditDialog";
 import { MonthlySummary } from "@/features/attendance/MonthlySummary";
 import { useAttendanceHistory } from "@/features/attendance/useAttendance";
 
@@ -24,9 +26,17 @@ export default function HistoryPage() {
 
   const { data, isLoading } = useAttendanceHistory(monthStr);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecordResponse | null>(null);
+
   const handleMonthChange = (newYear: number, newMonth: number) => {
     setYear(newYear);
     setMonth(newMonth);
+  };
+
+  const handleEditMemo = (record: AttendanceRecordResponse) => {
+    setEditingRecord(record);
+    setEditOpen(true);
   };
 
   return (
@@ -43,8 +53,9 @@ export default function HistoryPage() {
           ))}
         </div>
       ) : (
-        <AttendanceTable days={data?.days ?? []} />
+        <AttendanceTable days={data?.days ?? []} onEditMemo={handleEditMemo} />
       )}
+      <MemoEditDialog open={editOpen} onOpenChange={setEditOpen} record={editingRecord} />
     </div>
   );
 }

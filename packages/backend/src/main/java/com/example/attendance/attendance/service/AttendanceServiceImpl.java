@@ -50,7 +50,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional
-    public AttendanceRecordResponse clockIn(UUID employeeId) {
+    public AttendanceRecordResponse clockIn(UUID employeeId, String memo) {
         var employee = findEmployeeOrThrow(employeeId);
         var today = LocalDate.now(clock);
 
@@ -65,6 +65,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .employee(employee)
                 .workDate(today)
                 .clockIn(now)
+                .clockInMemo(blankToNull(memo))
                 .corrected(false)
                 .build();
 
@@ -75,15 +76,51 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional
-    public AttendanceRecordResponse clockOut(UUID employeeId) {
+    public AttendanceRecordResponse clockOut(UUID employeeId, String memo) {
         var today = LocalDate.now(clock);
         var record = attendanceRepository.findByEmployeeIdAndWorkDateAndClockOutIsNull(employeeId, today)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "No active clock-in found"));
 
         record.setClockOut(Instant.now(clock));
+        record.setClockOutMemo(blankToNull(memo));
         var saved = attendanceRepository.save(record);
         log.info("Clock-out recorded for employee={} at={}", employeeId, saved.getClockOut());
         return AttendanceRecordResponse.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public AttendanceRecordResponse updateMemo(
+            UUID recordId, UUID employeeId, String clockInMemo, String clockOutMemo, Long version) {
+        var record = attendanceRepository.findById(recordId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Attendance record with id '%s' was not found".formatted(recordId)));
+
+        if (!record.getEmployee().getId().equals(employeeId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only edit your own attendance memo");
+        }
+        validateVersion(record, version);
+
+        record.setClockInMemo(blankToNull(clockInMemo));
+        record.setClockOutMemo(blankToNull(clockOutMemo));
+        var saved = attendanceRepository.save(record);
+        log.info("Attendance memo updated for record={} by employee={}", recordId, employeeId);
+        return AttendanceRecordResponse.from(saved);
+    }
+
+    private void validateVersion(AttendanceRecord record, Long version) {
+        if (!record.getVersion().equals(version)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The attendance record was modified by another user. Please refresh and try again.");
+        }
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @Override
