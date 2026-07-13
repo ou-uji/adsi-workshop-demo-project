@@ -149,7 +149,12 @@ export function EmployeeFormDialog({
             onValueChange={(value) => setForm({ ...form, departmentId: value ?? "" })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="部署を選択" />
+              <SelectValue placeholder="部署を選択">
+                {(value) => {
+                  const dept = departments.find((d) => d.id === value);
+                  return dept?.name ?? "部署を選択";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {departments.map((dept) => (
@@ -173,7 +178,12 @@ export function EmployeeFormDialog({
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="ロールを選択" />
+              <SelectValue placeholder="ロールを選択">
+                {(value) => {
+                  const labels: Record<string, string> = { ADMIN: "管理者", EMPLOYEE: "一般" };
+                  return labels[value as string] ?? "ロールを選択";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="EMPLOYEE">一般</SelectItem>
