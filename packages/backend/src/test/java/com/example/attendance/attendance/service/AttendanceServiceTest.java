@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +96,27 @@ class AttendanceServiceTest {
             var captor = ArgumentCaptor.forClass(AttendanceRecord.class);
             verify(attendanceRepository).save(captor.capture());
             assertThat(captor.getValue().getEmployee().getId()).isEqualTo(employee.getId());
+        }
+
+        @Test
+        @DisplayName("出勤中（未退勤レコードあり）に再度出勤打刻すると409エラーで新規レコードを作らない")
+        void clockIn_alreadyClockedIn_throwsConflict() {
+            // Arrange
+            when(employeeRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
+            var openRecord = AttendanceRecord.builder()
+                    .id(UUID.randomUUID())
+                    .employee(employee)
+                    .workDate(TODAY_TOKYO)
+                    .clockIn(Instant.parse("2025-01-14T23:00:00Z"))
+                    .build();
+            when(attendanceRepository.findByEmployeeIdAndWorkDateAndClockOutIsNull(employee.getId(), TODAY_TOKYO))
+                    .thenReturn(Optional.of(openRecord));
+
+            // Act & Assert
+            assertThatThrownBy(() -> service.clockIn(employee.getId()))
+                    .isInstanceOf(ResponseStatusException.class)
+                    .hasMessageContaining("Already clocked in");
+            verify(attendanceRepository, never()).save(any(AttendanceRecord.class));
         }
 
     }

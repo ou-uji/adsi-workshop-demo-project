@@ -165,6 +165,31 @@ class AttendanceIntegrationTest {
     }
 
     @Test
+    @DisplayName("出勤中に再度出勤打刻すると409が返り、退勤打刻は正常に成功する")
+    void clockInTwice_thenClockOut_secondClockInReturns409() throws Exception {
+        mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString()))
+            .andExpect(status().isCreated());
+
+        // 2回目の出勤打刻は拒否される（二重打刻防止）
+        mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString()))
+            .andExpect(status().isConflict());
+
+        // 二重打刻が防がれているため退勤打刻は正常に成功する
+        mockMvc.perform(post("/api/attendance/clock-out")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.clockOut").exists());
+    }
+
+    @Test
     @DisplayName("未打刻状態のtodayステータスはNOT_CLOCKED_IN")
     void getTodayStatus_notClockedIn_returnsNotClockedIn() throws Exception {
         mockMvc.perform(get("/api/attendance/today")
