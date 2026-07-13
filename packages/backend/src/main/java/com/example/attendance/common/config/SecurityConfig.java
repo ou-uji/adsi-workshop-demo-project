@@ -104,6 +104,12 @@ public class SecurityConfig {
             .requestMatchers("/api/corrections/*/approve").authenticated()
             .requestMatchers("/api/corrections/*/reject").authenticated()
 
+            .requestMatchers(HttpMethod.POST, "/api/leave-requests").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/leave-requests").authenticated()
+            .requestMatchers("/api/leave-requests/pending/**").authenticated()
+            .requestMatchers("/api/leave-requests/*/approve").authenticated()
+            .requestMatchers("/api/leave-requests/*/reject").authenticated()
+
             .requestMatchers("/api/employees/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/departments").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PUT, "/api/departments/{id}").hasRole("ADMIN")
