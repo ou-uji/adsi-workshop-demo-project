@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { TodayStatusResponse } from "./attendance-api";
 import { ClockButtons } from "./ClockButtons";
@@ -62,5 +63,37 @@ describe("ClockButtons", () => {
 
     expect(getClockInButton()).toBeDisabled();
     expect(getClockOutButton()).toBeDisabled();
+  });
+
+  it("メモを入力して出勤すると、入力値付きで clockIn mutate が呼ばれる", async () => {
+    const user = userEvent.setup();
+    setupStatus("NOT_CLOCKED_IN");
+    render(<ClockButtons />);
+
+    await user.type(screen.getByLabelText("メモ（任意）"), "電車遅延のため遅刻");
+    await user.click(getClockInButton());
+
+    expect(mockClockInMutate).toHaveBeenCalledWith("電車遅延のため遅刻", expect.anything());
+  });
+
+  it("メモ未入力で出勤すると、memo は undefined で mutate が呼ばれる（空欄OK）", async () => {
+    const user = userEvent.setup();
+    setupStatus("NOT_CLOCKED_IN");
+    render(<ClockButtons />);
+
+    await user.click(getClockInButton());
+
+    expect(mockClockInMutate).toHaveBeenCalledWith(undefined, expect.anything());
+  });
+
+  it("メモを入力して退勤すると、入力値付きで clockOut mutate が呼ばれる", async () => {
+    const user = userEvent.setup();
+    setupStatus("CLOCKED_IN");
+    render(<ClockButtons />);
+
+    await user.type(screen.getByLabelText("メモ（任意）"), "客先直行");
+    await user.click(getClockOutButton());
+
+    expect(mockClockOutMutate).toHaveBeenCalledWith("客先直行", expect.anything());
   });
 });

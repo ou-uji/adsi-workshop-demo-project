@@ -3,12 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/components/Toast";
 import { useAuth } from "@/features/auth/useAuth";
+import { ApiClientError } from "@/lib/api-client";
 import {
   clockIn,
   clockOut,
   fetchHistory,
   fetchTeamAttendance,
   fetchTodayStatus,
+  type MemoUpdateRequest,
+  updateMemo,
 } from "./attendance-api";
 
 const TODAY_STATUS_KEY = ["attendance", "today"] as const;
@@ -27,15 +30,22 @@ export function useTodayStatus() {
   });
 }
 
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiClientError ? error.detail : fallback;
+}
+
 export function useClockIn() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => clockIn(user!.id),
+    mutationFn: (memo?: string) => clockIn(user!.id, memo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODAY_STATUS_KEY });
       toast.success("出勤を記録しました");
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "出勤の記録に失敗しました"));
     },
   });
 }
@@ -45,10 +55,31 @@ export function useClockOut() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => clockOut(user!.id),
+    mutationFn: (memo?: string) => clockOut(user!.id, memo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODAY_STATUS_KEY });
       toast.success("退勤を記録しました");
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "退勤の記録に失敗しました"));
+    },
+  });
+}
+
+export function useUpdateMemo() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ recordId, request }: { recordId: string; request: MemoUpdateRequest }) =>
+      updateMemo(recordId, user!.id, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: HISTORY_KEY });
+      queryClient.invalidateQueries({ queryKey: TODAY_STATUS_KEY });
+      toast.success("メモを更新しました");
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "メモの更新に失敗しました"));
     },
   });
 }

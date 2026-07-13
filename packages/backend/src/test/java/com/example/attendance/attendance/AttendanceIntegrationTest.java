@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -266,6 +267,91 @@ class AttendanceIntegrationTest {
             .andExpect(jsonPath("$.days").isArray())
             .andExpect(jsonPath("$.summary").exists())
             .andExpect(jsonPath("$.summary.workDays").value(1));
+    }
+
+    @Test
+    @DisplayName("メモ付き出勤打刻→履歴取得でメモが返される")
+    void clockInWithMemo_thenHistory_returnsMemo() throws Exception {
+        mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString())
+                .contentType(APPLICATION_JSON)
+                .content("{\"memo\":\"電車遅延のため遅刻\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.clockInMemo").value("電車遅延のため遅刻"));
+
+        var currentMonth = YearMonth.now().toString();
+        mockMvc.perform(get("/api/attendance/history")
+                .session(employeeSession)
+                .param("employeeId", employeeId.toString())
+                .param("month", currentMonth))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.days[0].records[0].clockInMemo").value("電車遅延のため遅刻"));
+    }
+
+    @Test
+    @DisplayName("メモ編集→再取得で更新が反映される（承認不要・即時）")
+    void updateMemo_thenRefetch_reflectsChange() throws Exception {
+        var createResult = mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString())
+                .contentType(APPLICATION_JSON)
+                .content("{\"memo\":\"初回メモ\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        var body = createResult.getResponse().getContentAsString();
+        var recordId = com.jayway.jsonpath.JsonPath.read(body, "$.id").toString();
+        var version = com.jayway.jsonpath.JsonPath.read(body, "$.version");
+
+        mockMvc.perform(patch("/api/attendance/records/{id}/memo", recordId)
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString())
+                .contentType(APPLICATION_JSON)
+                .content("{\"clockInMemo\":\"修正後メモ\",\"clockOutMemo\":null,\"version\":" + version + "}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.clockInMemo").value("修正後メモ"));
+    }
+
+    @Test
+    @DisplayName("他人のレコードのメモを編集しようとすると403が返される")
+    void updateMemo_notOwner_returns403() throws Exception {
+        var createResult = mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString()))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        var body = createResult.getResponse().getContentAsString();
+        var recordId = com.jayway.jsonpath.JsonPath.read(body, "$.id").toString();
+        var version = com.jayway.jsonpath.JsonPath.read(body, "$.version");
+
+        // manager が employee のレコードを編集 → 403
+        mockMvc.perform(patch("/api/attendance/records/{id}/memo", recordId)
+                .session(managerSession)
+                .with(csrf())
+                .param("employeeId", managerId.toString())
+                .contentType(APPLICATION_JSON)
+                .content("{\"clockInMemo\":\"改ざん\",\"version\":" + version + "}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("201文字メモの出勤打刻は400が返される")
+    void clockIn_memoOver200_returns400() throws Exception {
+        var longMemo = "あ".repeat(201);
+
+        mockMvc.perform(post("/api/attendance/clock-in")
+                .session(employeeSession)
+                .with(csrf())
+                .param("employeeId", employeeId.toString())
+                .contentType(APPLICATION_JSON)
+                .content("{\"memo\":\"" + longMemo + "\"}"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
